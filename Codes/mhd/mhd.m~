@@ -22,7 +22,7 @@ dt = .005;    % dt= time step
 tsim = 0.8;   % tsim= total time of simulation
 tfldout = 0.01;  % tfldout= time between plots of field quantities
 tpause = 0.2;    % tpause= pause time in seconds after field plots
-iTravelingWave= 0; % iTravelingWave = 1 for traveling wave to right or -1 for traveling wave
+iTravelingWave=-1; % iTravelingWave = 1 for traveling wave to right or -1 for traveling wave
                    % to left; any other value leads to standing wave
 %% Generate a 1-D Grid _x_
 % The total number of grid points 
@@ -121,13 +121,13 @@ vxmax_plot=-1; % limits used in plotting
 vymax_plot=-1;
 bymax_plot=-1;
 
-for it= 1:nt % the main time loop
+for it= 1:10 % the main time loop
 
   if( it==1 ) % Define t= time
-    t= 0.;
+    t= 0.
   else
-    t= t + dt; % evolv the simulation t+ = dt
-  end
+    t= t + dt % evolv the simulation t+ = dt
+  end; 
 
 %%% Diagnostics
 % * Field plots only every nfldout time steps
@@ -168,10 +168,10 @@ for it= 1:nt % the main time loop
     end
     xlabel('x')
     ylabel('B_y')
-    disp(['Simulation Time = ',num2str(t)]);
+    
     pause(tpause)
     
-  end
+  end;
 % Calculate energies.  ven= kinetic energy, ben= magnetic energy, 
 %  pen= pressure energy.  An adiabatic relation between pressure and 
 %  density is assumed, pressure p = p0*d**gamma.  ten= total energy.
@@ -179,11 +179,10 @@ for it= 1:nt % the main time loop
   ben= 0.;
   pen= 0.;
   for i= 2:ni-1
-    p(i)= p0 * (d2(i)^gamma);
     ven= ven + .5 * d2(i) * ( vx2(i)^2 + vy2(i)^2 );
     ben= ben + .5 * by2(i)^2;
     pen= pen + (p(i)-p0) / (gamma-1.);
-  end
+  end;
 % Divide by nid to get energy per grid point.
   ven= ven/nid;
   ben= ben/nid;
@@ -203,22 +202,28 @@ for it= 1:nt % the main time loop
 %   pen_save(it)= sum( p(2:ni-1) - p0 ) / (gamma-1) / nid;
 %   ten_save(it)= ven_save(it) + ben_save(it) + pen_save(it);
 
-%%% Now we use a two step procedure to advance the fields.  This is in 
+% Now we use a two step procedure to advance the fields.  This is in 
 %  order to make the time differencing more accurate.
-% 1. First, calculate pressure, e-field, current and mass flux
-% 2. second, advance quatities 1/2 time step (predictor step).
-% 3. switch $f_1$ and $f_2$
-% 4. the corrector step
+% First, advance quatities 1/2 time step (predictor step).
 
-  for i= 1:ni % Calculate pressure, electric field, current, and density flux.
+% Calculate pressure, electric field, current, and density flux.
+  for i= 1:ni
     p(i)= p0 * (d2(i)^gamma);
     ez(i)= - ( vx2(i)*by2(i) - vy2(i)*bx0 );
     dfx(i)= d2(i) * vx2(i);
-  end 
-  for i= 2:ni-1 % Calculate current - pay attention to the index
-    cz(i)= ( by2(i+1) - by2(i-1) ) / dx2; 
-  end
+  end;   
+% Alternately, p = p0 * (d2.^gamma);
+%              ez = - ( vx2.*by2 - vy2*bx0 );
+%              dfx = d2 .* vx2;
+  for i= 2:ni-1
+    cz(i)= ( by2(i+1) - by2(i-1) ) / dx2;
+  end;  
+% Alternately, 
+%              cz(2:ni-1) = ( by2(3:ni) - by2(1:ni-2) )/dx2;
 
+% Fix buffer values for cz.
+  cz(1)= cz(ni-1);
+  cz(ni)= cz(2);
   for i= 2:ni-1
     d1(i)= 0.5*(d1(i)+d2(i))  - dt*( dfx(i+1) - dfx(i-1) )/dx2;  % Order of eqns doesn't matter here
     by1(i)= 0.5*(by1(i)+by2(i)) + dt*(  ez(i+1) -  ez(i-1) )/dx2;
@@ -228,7 +233,11 @@ for it= 1:nt % the main time loop
     vy1(i)= 0.5*(vy1(i)+vy2(i)) + dt*( ...
                               -vx2(i)*( vy2(i+1) - vy2(i-1) )/dx2...
                               +cz(i)*bx0/d2(i)                    );
-  end
+  end;% end of 'for i='
+  
+  % Alternately,
+  %   d1(2:ni-1) = 0.5*( d1(2:ni-1) + d2(2:ni-1) ) - dt*( dfx(3:ni) - dfx(1:ni-2 )/dx2;
+  % Other equations similar
 
   [d1,d2] = switch_aa_aa(d1,d2);
   [by1,by2] = switch_aa_aa(by1,by2);
@@ -263,7 +272,10 @@ for it= 1:nt % the main time loop
   p= p0*(d2.^gamma);
   for i= 2:ni-1
     cz(i)= ( by2(i+1) - by2(i-1) ) / dx2;
-  end
+  end;  
+% Fix buffer values for cz.
+  cz(1)= cz(ni-1);
+  cz(ni)= cz(2);
 
 % Advance quatities one full time step (corrector step).  Since we use
 %  vx2 in the vy2 equation, and d2 and by2 in the vx2 equation, it's important
@@ -278,7 +290,7 @@ for it= 1:nt % the main time loop
       +( -( p(i+1) - p(i-1) )/dx2 -cz(i)*by2(i) )/d2(i)      );
     d2(i)= d1(i)   - dt*( dfx(i+1) - dfx(i-1) )/dx2;
     by2(i)= by1(i) + dt*(  ez(i+1) -  ez(i-1) )/dx2;
-  end % end of 'for i='
+  end; % end of 'for i='
   
 % Fix buffer values.
   d2(1)= d2(ni-1);
@@ -294,12 +306,12 @@ for it= 1:nt % the main time loop
   t2dfld(1,i2dfld) = t;    % save time for axis label
   vx_2d(:,i2dfld) = vx2;
   
-end%  end of 'for it='  
+end;%  end of 'for it='  
          
 %% Final Plots/diagnostics for energies and velocities
 max_e = max([ten_save pen_save ven_save ben_save]);
 min_e = min([ten_save pen_save ven_save ben_save]);
-
+%%% aaa
 figure(2);
 set(gcf,'Position',[0.35*ss3 0.15*ss4 0.27*ss3 0.40*ss4]);
 hold on;
@@ -313,7 +325,7 @@ ylim([min_e-.05*range_e max_e+.05*range_e]);
 xlabel('t')
 ylabel('energy')
 title('   kinetic (red), pertubed magnetic (blue), perturbed pressure (geen), and total (black) energy')
-
+%%% bbb
 figure(3)
 set(gcf,'Position',[0.67*ss3 0.15*ss4 0.27*ss3 0.40*ss4]);
 pcolor(t2dfld,x,vx_2d)

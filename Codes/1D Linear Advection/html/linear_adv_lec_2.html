@@ -1,0 +1,353 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>explicit linear advection code 1-D</title><meta name="generator" content="MATLAB 9.7"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-03-19"><meta name="DC.source" content="linear_adv_lec_2.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>explicit linear advection code 1-D</h1><pre class="codeinput">x = linspace(0,1,101); <span class="comment">% create a computational grid between 0 and 1 with 100 grid points</span>
+<span class="comment">% alternatively you can do this: dx = 0.01; x = 0:dx:100</span>
+dx = x(2)-x(1);
+Ni = length(x);
+
+u0 = -0.1; <span class="comment">% advection speed;</span>
+sigma = 0.1;
+Q = exp(-(x-0.5).^2/sigma^2); <span class="comment">% initial profile of Q</span>
+
+Q = x*0;
+Q(abs(x-0.5)&lt;0.1)=1;
+Q_init = Q; <span class="comment">% save the initial profile for the final plot</span>
+
+<span class="comment">% impose boundary conditions here - periodic</span>
+Q(1) = Q(Ni-1);
+Q(Ni) = Q(2);
+
+dt = 0.005; <span class="comment">% FIXME: time step should follow wave propagation</span>
+Time = 0; <span class="comment">% keep track on the time step</span>
+
+figure(<span class="string">'position'</span>,[442   668   988   280]) <span class="comment">% create a blank figure to show the advection results</span>
+count = 1;
+tt = 0;
+mm = 0;
+Qc = Q;
+
+<span class="keyword">for</span> n=1:500 <span class="comment">% the time stepping loop - let's try advect 200 steps maximum</span>
+
+    <span class="comment">% plot the Q profile as a function of x</span>
+    <span class="keyword">if</span>(mod(n,5)==1) <span class="comment">% only plot every 5 steps</span>
+        plot(x,Q,<span class="string">'-o'</span>);
+        hold <span class="string">on</span>
+        plot(x,Qc,<span class="string">'-o'</span>);
+        hold <span class="string">on</span>
+        plot(x,x*0+1,<span class="string">'k--'</span>);
+
+<span class="comment">%         Q_ana = x*0;</span>
+<span class="comment">%         Q_ana(abs(x+u0*Time-0.5)&lt;=0.11)=1;</span>
+<span class="comment">%         plot(x,Q_ana,'r-');</span>
+        hold <span class="string">off</span>
+        legend(<span class="string">'Backward FD'</span>,<span class="string">'central-FD'</span>)
+
+        xlabel(<span class="string">'x'</span>),ylabel(<span class="string">'Q'</span>),title([<span class="string">'dt ='</span>,num2str(dt),<span class="string">', Simulation Time = '</span>,num2str(Time)]);
+        set(gca,<span class="string">'fontsize'</span>,14); <span class="comment">% make the font better for visualization</span>
+        ylim([-0.2 1.5])
+
+
+        pause(0.1)
+
+<span class="comment">%         tt(count) = Time;</span>
+<span class="comment">%         mm(count) = max(Q);</span>
+        <span class="comment">% save figure</span>
+        str = sprintf(<span class="string">'%0*d'</span>,4,count);
+        image_fn = [<span class="string">'~/Data/solver/png/lec2-'</span>,str];
+        disp(image_fn);
+        saveas(gcf,image_fn,<span class="string">'png'</span>);
+        count = count+1;
+    <span class="keyword">end</span>
+
+    Time = Time + dt; <span class="comment">% the current time</span>
+
+    <span class="keyword">for</span> i=2:Ni-1 <span class="comment">% index stops at Ni-1 because we need i+1</span>
+        Q(i) = Q(i) + u0*dt/dx.*(Q(i+1)-Q(i)); <span class="comment">% our first forward-difference scheme!</span>
+    <span class="keyword">end</span>
+
+    <span class="keyword">for</span> i=2:Ni-1 <span class="comment">% index stops at Ni-1 because we need i+1</span>
+        Qc(i) = Qc(i) + u0*dt/(2*dx).*(Qc(i+1)-Qc(i-1)); <span class="comment">% central-difference scheme!</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% This is called a periodic boundary condition</span>
+    Q(1) = Q(Ni-1);
+    Q(Ni) = Q(2);
+
+<span class="comment">%     % diagnostics</span>
+<span class="comment">%     if(mod(n,5)==0) % only store max Q every 5 steps</span>
+<span class="comment">%</span>
+<span class="comment">%         tt(count) = Time;</span>
+<span class="comment">%         mm(count) = max(Q);</span>
+<span class="comment">%         count = count+1;</span>
+<span class="comment">%</span>
+<span class="comment">%     end</span>
+
+    <span class="keyword">if</span>(Time &gt; 2)
+        <span class="keyword">break</span>; <span class="comment">% stop the time-loop if simulation time reaches 1</span>
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">~/Data/solver/png/lec2-0001
+~/Data/solver/png/lec2-0002
+~/Data/solver/png/lec2-0003
+~/Data/solver/png/lec2-0004
+~/Data/solver/png/lec2-0005
+~/Data/solver/png/lec2-0006
+~/Data/solver/png/lec2-0007
+~/Data/solver/png/lec2-0008
+~/Data/solver/png/lec2-0009
+~/Data/solver/png/lec2-0010
+~/Data/solver/png/lec2-0011
+~/Data/solver/png/lec2-0012
+~/Data/solver/png/lec2-0013
+~/Data/solver/png/lec2-0014
+~/Data/solver/png/lec2-0015
+~/Data/solver/png/lec2-0016
+~/Data/solver/png/lec2-0017
+~/Data/solver/png/lec2-0018
+~/Data/solver/png/lec2-0019
+~/Data/solver/png/lec2-0020
+~/Data/solver/png/lec2-0021
+~/Data/solver/png/lec2-0022
+~/Data/solver/png/lec2-0023
+~/Data/solver/png/lec2-0024
+~/Data/solver/png/lec2-0025
+~/Data/solver/png/lec2-0026
+~/Data/solver/png/lec2-0027
+~/Data/solver/png/lec2-0028
+~/Data/solver/png/lec2-0029
+~/Data/solver/png/lec2-0030
+~/Data/solver/png/lec2-0031
+~/Data/solver/png/lec2-0032
+~/Data/solver/png/lec2-0033
+~/Data/solver/png/lec2-0034
+~/Data/solver/png/lec2-0035
+~/Data/solver/png/lec2-0036
+~/Data/solver/png/lec2-0037
+~/Data/solver/png/lec2-0038
+~/Data/solver/png/lec2-0039
+~/Data/solver/png/lec2-0040
+~/Data/solver/png/lec2-0041
+~/Data/solver/png/lec2-0042
+~/Data/solver/png/lec2-0043
+~/Data/solver/png/lec2-0044
+~/Data/solver/png/lec2-0045
+~/Data/solver/png/lec2-0046
+~/Data/solver/png/lec2-0047
+~/Data/solver/png/lec2-0048
+~/Data/solver/png/lec2-0049
+~/Data/solver/png/lec2-0050
+~/Data/solver/png/lec2-0051
+~/Data/solver/png/lec2-0052
+~/Data/solver/png/lec2-0053
+~/Data/solver/png/lec2-0054
+~/Data/solver/png/lec2-0055
+~/Data/solver/png/lec2-0056
+~/Data/solver/png/lec2-0057
+~/Data/solver/png/lec2-0058
+~/Data/solver/png/lec2-0059
+~/Data/solver/png/lec2-0060
+~/Data/solver/png/lec2-0061
+~/Data/solver/png/lec2-0062
+~/Data/solver/png/lec2-0063
+~/Data/solver/png/lec2-0064
+~/Data/solver/png/lec2-0065
+~/Data/solver/png/lec2-0066
+~/Data/solver/png/lec2-0067
+~/Data/solver/png/lec2-0068
+~/Data/solver/png/lec2-0069
+~/Data/solver/png/lec2-0070
+~/Data/solver/png/lec2-0071
+~/Data/solver/png/lec2-0072
+~/Data/solver/png/lec2-0073
+~/Data/solver/png/lec2-0074
+~/Data/solver/png/lec2-0075
+~/Data/solver/png/lec2-0076
+~/Data/solver/png/lec2-0077
+~/Data/solver/png/lec2-0078
+~/Data/solver/png/lec2-0079
+~/Data/solver/png/lec2-0080
+~/Data/solver/png/lec2-0081
+</pre><img vspace="5" hspace="5" src="linear_adv_lec_2_01.png" alt=""> <p>% plot the initial and final profiles of Q figure('position',[442   668   988   280]) % create a blank figure to show the advection results plot(x,Q_init,'-ro'); hold on plot(x,Q,'-bo') Q_ana = x*0; Q_ana(abs(x-0.3)&lt;0.1)=1; % plot(x,Q_ana,'--b') xlabel('x') ylabel('Q') ylim([-0.1 1.2]) set(gca,'fontsize',14)</p><p>% plot the initial and final profiles of Q figure('position',[442   668   988   280],'color','w') % create a blank figure to show the advection results plot(x,Q_init,'-ro'); hold on plot(x,Q,'-bo') xlabel('x') ylabel('Q') ylim([-0.1 1.2]) set(gca,'fontsize',14)         legend('Advected Q','Initial Q')</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%%  explicit linear advection code 1-D
+
+x = linspace(0,1,101); % create a computational grid between 0 and 1 with 100 grid points
+% alternatively you can do this: dx = 0.01; x = 0:dx:100
+dx = x(2)-x(1);
+Ni = length(x);
+
+u0 = -0.1; % advection speed;
+sigma = 0.1;
+Q = exp(-(x-0.5).^2/sigma^2); % initial profile of Q
+
+Q = x*0;
+Q(abs(x-0.5)<0.1)=1;
+Q_init = Q; % save the initial profile for the final plot
+
+% impose boundary conditions here - periodic
+Q(1) = Q(Ni-1);
+Q(Ni) = Q(2);
+
+dt = 0.005; % FIXME: time step should follow wave propagation
+Time = 0; % keep track on the time step
+
+figure('position',[442   668   988   280]) % create a blank figure to show the advection results
+count = 1;
+tt = 0;
+mm = 0;
+Qc = Q;
+
+for n=1:500 % the time stepping loop - let's try advect 200 steps maximum
+
+    % plot the Q profile as a function of x
+    if(mod(n,5)==1) % only plot every 5 steps
+        plot(x,Q,'-o');
+        hold on
+        plot(x,Qc,'-o');
+        hold on        
+        plot(x,x*0+1,'kREPLACE_WITH_DASH_DASH');
+        
+%         Q_ana = x*0;
+%         Q_ana(abs(x+u0*Time-0.5)<=0.11)=1;        
+%         plot(x,Q_ana,'r-');
+        hold off     
+        legend('Backward FD','central-FD') 
+        
+        xlabel('x'),ylabel('Q'),title(['dt =',num2str(dt),', Simulation Time = ',num2str(Time)]);
+        set(gca,'fontsize',14); % make the font better for visualization
+        ylim([-0.2 1.5])
+        
+        
+        pause(0.1)
+        
+%         tt(count) = Time;
+%         mm(count) = max(Q);
+        % save figure
+        str = sprintf('%0*d',4,count);
+        image_fn = ['~/Data/solver/png/lec2-',str];
+        disp(image_fn);
+        saveas(gcf,image_fn,'png');
+        count = count+1;
+    end
+   
+    Time = Time + dt; % the current time
+    
+    for i=2:Ni-1 % index stops at Ni-1 because we need i+1
+        Q(i) = Q(i) + u0*dt/dx.*(Q(i+1)-Q(i)); % our first forward-difference scheme!
+    end
+    
+    for i=2:Ni-1 % index stops at Ni-1 because we need i+1
+        Qc(i) = Qc(i) + u0*dt/(2*dx).*(Qc(i+1)-Qc(i-1)); % central-difference scheme!
+    end
+    
+    % This is called a periodic boundary condition
+    Q(1) = Q(Ni-1);
+    Q(Ni) = Q(2);    
+    
+%     % diagnostics
+%     if(mod(n,5)==0) % only store max Q every 5 steps
+%         
+%         tt(count) = Time;
+%         mm(count) = max(Q);
+%         count = count+1;   
+%         
+%     end
+    
+    if(Time > 2)
+        break; % stop the time-loop if simulation time reaches 1
+    end
+    
+end
+%%
+% % plot the initial and final profiles of Q
+% figure('position',[442   668   988   280]) % create a blank figure to show the advection results
+% plot(x,Q_init,'-ro'); hold on
+% plot(x,Q,'-bo')
+% Q_ana = x*0;
+% Q_ana(abs(x-0.3)<0.1)=1;
+% % plot(x,Q_ana,'REPLACE_WITH_DASH_DASHb')
+% xlabel('x')
+% ylabel('Q')
+% ylim([-0.1 1.2])
+% set(gca,'fontsize',14)
+%%
+% % plot the initial and final profiles of Q
+% figure('position',[442   668   988   280],'color','w') % create a blank figure to show the advection results
+% plot(x,Q_init,'-ro'); hold on
+% plot(x,Q,'-bo')
+% xlabel('x')
+% ylabel('Q')
+% ylim([-0.1 1.2])
+% set(gca,'fontsize',14)
+%         legend('Advected Q','Initial Q') 
+% 
+
+##### SOURCE END #####
+--></body></html>
