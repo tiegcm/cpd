@@ -18,11 +18,11 @@ idirpert = 2; % idirpert = integer indicating direction of velocity perturbation
               %    = anything else for both
 beta = 1;     % beta= plasma beta
 gamma=5/3;    % gamma = ratio of specific heats
-dt = .005;    % dt= time step
-tsim = 0.8;   % tsim= total time of simulation
+dt = .01;    % dt= time step
+tsim = 1.0%954;   % tsim= total time of simulation
 tfldout = 0.01;  % tfldout= time between plots of field quantities
 tpause = 0.2;    % tpause= pause time in seconds after field plots
-iTravelingWave= 0; % iTravelingWave = 1 for traveling wave to right or -1 for traveling wave
+iTravelingWave= 1; % iTravelingWave = 1 for traveling wave to right or -1 for traveling wave
                    % to left; any other value leads to standing wave
 %% Generate a 1-D Grid _x_
 % The total number of grid points 
@@ -66,6 +66,8 @@ dx2= dx*2.;    % Useful quantity to be used in taking x derivatives- again, very
 % * $\rho_0=1$ - initial density is constant along x-direction
 % * idirpert determines what kind of initial "perturbation" is used
 bx0= 1.; % choose a constant Bx = 1 
+    w0 = 0.15;
+
 for i= 1:ni
   d1(i)= 1.;
   by1(i)= 0.;
@@ -73,14 +75,17 @@ end
 % Alternately, d1(:) = 1; by1(:) = 0;
 if( idirpert==1 )       % perturbe in the x-direction velocity only
   for i= 1:ni
-    vx1(i)= vpert*sin( pi2*x(i) );
+%     vx1(i)= vpert*sin( pi2*x(i) );
+        vx1(i)= vpert*exp(-(x(i)-0.5).^2/w0.^2);
     vy1(i)= 0.;
   end
 % Alternately, vx1 = vpert*sin( pi2*x );                                             
 elseif( idirpert==2 )   % perturbe in the y-direction velocity only
   for i= 1:ni
     vx1(i)= 0.;
-    vy1(i)= vpert*sin( pi2*x(i) );
+%     vy1(i)= vpert*sin( pi2*x(i) );
+    vy1(i)= vpert*exp(-(x(i)-0.5).^2/w0.^2);
+    
   end
 else                    % perturbe in the both velocity components
   for i= 1:ni
@@ -88,7 +93,7 @@ else                    % perturbe in the both velocity components
     vy1(i)= vx1(i);
   end
 end
-if( abs(iTravelingWave)==1 ) % set By perturbation based on traveling or standing wave solutions - see notes
+if( abs(iTravelingWave)==1 )   % set By perturbation based on traveling or standing wave solutions - see notes
   by1 = - iTravelingWave*vy1;  % For superposition of two traveling waves of form exp(k*x - omega*t)
 end
 %% Set up initial conditions - the $f_2$ stage
@@ -120,7 +125,7 @@ vx_2d = zeros(ni,1);   % (eventually) 2D array for time dependent plot of vx
 vxmax_plot=-1; % limits used in plotting
 vymax_plot=-1;
 bymax_plot=-1;
-
+count = 1;
 for it= 1:nt % the main time loop
 
   if( it==1 ) % Define t= time
@@ -170,6 +175,13 @@ for it= 1:nt % the main time loop
     ylabel('B_y')
     disp(['Simulation Time = ',num2str(t)]);
     pause(tpause)
+    
+            % save figure
+        str = sprintf('%0*d',4,count);
+        image_fn = ['~/Data/solver/png/lec3-',str];
+        disp(image_fn);
+        saveas(gcf,image_fn,'png');
+        count = count+1;
     
   end
 % Calculate energies.  ven= kinetic energy, ben= magnetic energy, 
@@ -248,14 +260,14 @@ for it= 1:nt % the main time loop
   end
   
 % Fix buffer values.
-  d2(1)= d2(ni-1);
-  d2(ni)= d2(2);
-  by2(1)= by2(ni-1);
-  by2(ni)= by2(2);
-  vx2(1)= vx2(ni-1);
-  vx2(ni)= vx2(2);
-  vy2(1)= vy2(ni-1);
-  vy2(ni)= vy2(2);
+  d2(1)= d2(2);
+  d2(ni)= d2(ni-1);
+  by2(1)= by2(2);
+  by2(ni)= by2(ni-1);
+  vx2(1)= -vx2(2);
+  vx2(ni)= -vx2(ni-1);
+  vy2(1)= -vy2(2);
+  vy2(ni)= -vy2(ni-1);
 
 % Calculate electric field, current, and density flux.
   ez= - ( vx2.*by2 - vy2.*bx0 );
@@ -280,19 +292,29 @@ for it= 1:nt % the main time loop
     by2(i)= by1(i) + dt*(  ez(i+1) -  ez(i-1) )/dx2;
   end % end of 'for i='
   
-% Fix buffer values.
-  d2(1)= d2(ni-1);
-  d2(ni)= d2(2);
-  by2(1)= by2(ni-1);
-  by2(ni)= by2(2);
-  vx2(1)= vx2(ni-1);
-  vx2(ni)= vx2(2);
-  vy2(1)= vy2(ni-1);
-  vy2(ni)= vy2(2);
+% % Fix buffer values - periodic
+%   d2(1)= d2(ni-1);
+%   d2(ni)= d2(2);
+%   by2(1)= by2(ni-1);
+%   by2(ni)= by2(2);
+%   vx2(1)= vx2(ni-1);
+%   vx2(ni)= vx2(2);
+%   vy2(1)= vy2(ni-1);
+%   vy2(ni)= vy2(2);
+  
+% Fix buffer value - hard-wall conducting
+  d2(1)= d2(2);
+  d2(ni)= d2(ni-1);
+  by2(1)= by2(2);
+  by2(ni)= by2(ni-1);
+  vx2(1)= -vx2(2);
+  vx2(ni)= -vx2(ni-1);
+  vy2(1)= -vy2(2);
+  vy2(ni)= -vy2(ni-1);  
   
   i2dfld = i2dfld + 1;
   t2dfld(1,i2dfld) = t;    % save time for axis label
-  vx_2d(:,i2dfld) = vx2;
+  vx_2d(:,i2dfld) = vy2;
   
 end%  end of 'for it='  
          
