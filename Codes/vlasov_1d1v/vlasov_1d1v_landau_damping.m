@@ -8,8 +8,8 @@ NO2 = NO/2; % # of ghost cells on each side
 nx = 64; % # of active cells in x space
 ny = 64; % # of active cells in v space
 
-L = 2*pi;
-Vmax = 6;
+L = 2*pi; % simulation domain from 0 to L
+Vmax = 6; % velocity space from -Vmax to Vmax
 
 deltax = 2/nx*L; % delta x
 deltay = 2/ny*Vmax; % delta y
