@@ -6,7 +6,7 @@ NO2 = NO/2; % # of ghost cells on each side
 
 % 1. generate a 2-D cartesian grid
 nx = 64; % # of active cells in x space
-ny = 64; % # of active cells in v space
+ny = 128; % # of active cells in v space
 
 L = 2*pi; % simulation domain from 0 to L
 Vmax = 6; % velocity space from -Vmax to Vmax
