@@ -4,12 +4,12 @@ close all
 L=2*pi;
 DT=.5;
 NT=200;NTOUT=25;
-NG=64;
+NG=32;
 N=10000;
 WP=1;
 QM=-1;
 V0=0.2;
-VT=0.0;
+VT=0.04;
 XP1=1;
 V1=0.01;
 mode=1;
@@ -50,7 +50,6 @@ for it=1:NT
     
     % diagnostics
     figure(1)
-    set(gcf,'position',[560   259   898   689],'color','w');
     subplot(2,2,1)
     plot(xp(1:2:N-1),vp(1:2:N-1),'b.');hold on
     plot(xp(2:2:N),vp(2:2:N),'r.');hold off
@@ -61,8 +60,8 @@ for it=1:NT
     subplot(2,2,2)
     histogram(vp,50,'normalization','pdf')
     xlabel('x'),ylabel('f(v)'),title('probability density function')    
-    xlim([-0.6 0.6]); ylim([0 5]);  
-    text(0.05,0.9,['Time = ',num2str(round(it*DT))],'unit','normalized');
+    xlim([-0.6 0.6]);
+    text
     set(gca,'fontsize',14);
     
     subplot(2,2,3)
@@ -75,13 +74,13 @@ for it=1:NT
     plot(linspace(0,L,NG),Eg,'b');
     xlabel('x'),ylabel('\rho'),title('Electric Field')
     xlim([0 pi*2])
-    ylim([-0.2 0.2]);set(gca,'fontsize',14);  
-    
-        str = sprintf('%0*d',4,it-1);
-        image_fn = ['~/Data/solver/png/pic1d_64-',str];
-        disp(image_fn);
-        saveas(gcf,image_fn,'png'); % save image    
-    
+    ylim([-0.2 0.2]);set(gca,'fontsize',14);      
     pause(0.1)
-        
+    
+    
 end
+
+%%
+plot(xp(1:N/2),vp(1:N/2),'b*');hold on
+plot(xp(N/2+1:N),vp(N/2+1:N),'r*');hold off
+
