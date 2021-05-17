@@ -77,11 +77,6 @@ for it=1:NT
     xlim([0 pi*2])
     ylim([-0.2 0.2]);set(gca,'fontsize',14);  
     
-        str = sprintf('%0*d',4,it-1);
-        image_fn = ['~/Data/solver/png/pic1d_64-',str];
-        disp(image_fn);
-        saveas(gcf,image_fn,'png'); % save image    
-    
     pause(0.1)
         
 end
