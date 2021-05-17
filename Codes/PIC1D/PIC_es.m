@@ -3,15 +3,15 @@ close all
 % parameters and constants
 L=2*pi;
 DT=.5;
-NT=200;NTOUT=25;
+NT=200;
 NG=64;
 N=10000;
 WP=1;
 QM=-1;
 V0=0.2;
-VT=0.0;
+VT=0.04;
 XP1=1;
-V1=0.01;
+V1=0.0;
 mode=1;
 Q=WP.^2/(QM*N/L);
 rho_back=-Q*N/L;
@@ -47,7 +47,7 @@ for it=1:NT
     Eg=([Phi(NG); Phi(1:NG-1)]-[Phi(2:NG);Phi(1)])/(2*dx);
     % projection q->p and update of vp
     vp=vp+mat*QM*Eg*DT;
-    
+     
     % diagnostics
     figure(1)
     set(gcf,'position',[560   259   898   689],'color','w');
