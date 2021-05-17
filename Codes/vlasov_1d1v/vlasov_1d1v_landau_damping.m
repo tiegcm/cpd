@@ -74,13 +74,11 @@ dy(I,J) = y(I,J+1) - y(I,J);
 volume(I,J) = dx(I,J).*dy(I,J);
 
 % 3. Initial conditions
-% two-stream (x - configuration space, y - velocity space)
+% Landau Damping (x - configuration space, y - velocity space)
 A = 0.05;
 k = 0.5;
-% rho = 1/sqrt(2*pi).*yc.^2.*exp(-yc.^2/2).*(1+A.*cos(k.*xc));
 rho = 1/sqrt(2*pi).*exp(-yc.^2/2).*(1+A.*cos(k.*xc));
 
-% rho = 2/7/sqrt(2*pi).*(1+5*yc.^2).*exp(-yc.^2/2).*(1+A.*((cos(2*k.*xc)+cos(3*k.*xc))/1.2 + cos(k*xc)));
 Ex = xc(:,1)*0;
 qe = xc(:,1)*0;
 
